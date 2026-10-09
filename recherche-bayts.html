@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recherche de bayts — رحّالة الأبيات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1f3330;
+    --ink-soft:#3c524d;
+    --parchment:#f4efe2;
+    --parchment-deep:#ece3cf;
+    --gold:#a9832f;
+    --gold-soft:#d8c48e;
+    --wine:#6d2b2b;
+    --paper-shadow: 0 1px 0 rgba(31,51,48,.06), 0 12px 30px -18px rgba(31,51,48,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #fbf8ee 0%, var(--parchment) 55%, var(--parchment-deep) 100%);
+    color:var(--ink);
+    font-family:'Lora', serif;
+    min-height:100vh;
+    padding:56px 20px 80px;
+  }
+  .page{ max-width:720px; margin:0 auto; }
+  header.masthead{ text-align:center; margin-bottom:44px; }
+  .kicker{
+    font-family:'Amiri', serif;
+    font-size:1.9rem;
+    color:var(--wine);
+    letter-spacing:.02em;
+    margin:0 0 6px;
+  }
+  .rule{
+    height:1px;
+    background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent);
+    margin:14px auto;
+    width:100%;
+  }
+  .rule.thick{height:2px;}
+  h1{ font-size:1.5rem; font-weight:600; margin:8px 0 6px; color:var(--ink); }
+  .subtitle{ font-size:.95rem; color:var(--ink-soft); font-style:italic; margin:0; }
+  section.step{
+    background:#fffdf7;
+    border:1px solid var(--gold-soft);
+    box-shadow:var(--paper-shadow);
+    padding:28px 30px;
+    margin-bottom:26px;
+    position:relative;
+  }
+  section.step::before{
+    content:attr(data-num);
+    position:absolute; top:-14px; left:26px;
+    background:var(--wine); color:var(--parchment);
+    font-family:'Amiri', serif; font-size:.85rem;
+    padding:3px 12px; letter-spacing:.04em;
+  }
+  section.step h2{ font-size:1.05rem; font-weight:600; margin:6px 0 4px; color:var(--ink); }
+  section.step p.help{ font-size:.88rem; color:var(--ink-soft); margin:0 0 16px; line-height:1.5; }
+  .dropzone{
+    border:1.5px dashed var(--gold);
+    background:var(--parchment);
+    padding:26px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag{ background:#efe6cd; border-color:var(--wine); }
+  .dropzone .fname{ font-weight:600; color:var(--wine); word-break:break-all; }
+  .dropzone .hint{ font-size:.82rem; color:var(--ink-soft); margin-top:6px; }
+  input[type=file]{display:none;}
+  .row{ display:flex; gap:10px; margin-top:4px; flex-wrap:wrap; align-items:center; }
+  input[type=text]{
+    flex:1; min-width:220px;
+    font-family:'Amiri', serif; font-size:1.15rem; direction:rtl;
+    padding:12px 14px; border:1px solid var(--gold-soft); background:#fffdf7; color:var(--ink);
+  }
+  input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  input[type=number]{
+    width:64px; font-family:'Lora', serif; font-size:1rem;
+    padding:11px 10px; border:1px solid var(--gold-soft); background:#fffdf7; color:var(--ink);
+  }
+  .modes{ margin-top:16px; display:flex; flex-direction:column; gap:10px; }
+  .mode-option{ display:flex; align-items:center; gap:10px; font-size:.9rem; color:var(--ink); }
+  .mode-option input[type=radio]{ accent-color:var(--wine); width:16px; height:16px; }
+  .mode-option .mode-extra{ display:flex; align-items:center; gap:8px; color:var(--ink-soft); }
+  label.opt{
+    display:flex; align-items:center; gap:6px;
+    font-size:.85rem; color:var(--ink-soft); margin-top:14px;
+  }
+  button{
+    font-family:'Lora', serif; font-size:.95rem; font-weight:600;
+    padding:12px 22px; background:var(--wine); color:#fbf3e6; border:none; cursor:pointer;
+    transition:background .15s ease;
+  }
+  button:hover:not(:disabled){background:#4f1f1f;}
+  button:disabled{ background:#c9c0aa; color:#807966; cursor:not-allowed; }
+  button.ghost{ background:transparent; color:var(--wine); border:1px solid var(--wine); }
+  button.ghost:hover:not(:disabled){background:#f1e4e4;}
+  .status{ font-size:.85rem; margin-top:10px; color:var(--ink-soft); }
+  .status.error{color:var(--wine); font-weight:600;}
+  .count{ font-family:'Lora', serif; font-size:.95rem; margin:0 0 14px; color:var(--ink-soft); }
+  .count strong{color:var(--wine); font-size:1.2rem;}
+  ol.results{ list-style:none; margin:0; padding:0; }
+  ol.results li{
+    padding:14px 0; border-bottom:1px solid var(--gold-soft);
+    display:flex; gap:14px; align-items:baseline;
+  }
+  ol.results li:last-child{border-bottom:none;}
+  .idx{ font-family:'Lora', serif; color:var(--gold); font-weight:600; font-size:.85rem; min-width:22px; }
+  .bayt{ font-family:'Amiri', serif; direction:rtl; font-size:1.2rem; line-height:1.9; color:var(--ink); flex:1; }
+  .bayt mark{ background:none; color:var(--wine); font-weight:700; }
+  footer{ text-align:center; margin-top:40px; font-size:.78rem; color:var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="rule thick"></div>
+    <p class="kicker">رحّالة الأبيات</p>
+    <h1>Recherche de bayts dans le corpus</h1>
+    <p class="subtitle">Cherchez un mot, une séquence, ou un mot répété un nombre précis de fois — extrayez les bayts correspondants en document Word.</p>
+    <div class="rule"></div>
+  </header>
+
+  <section class="step" data-num="I">
+    <h2>Charger le corpus</h2>
+    <p class="help">Déposez le document Word (.docx) contenant l'ensemble des khassaïdes. Un bayt est reconnu par ses séparateurs «&nbsp;|&nbsp;» : soit un seul (sadr | ajz), soit trois (quatre hémistiches) — les autres paragraphes sont ignorés lors de la recherche.</p>
+    <div class="dropzone" id="dropzone">
+      <div id="dzText">
+        <div class="fname">Cliquez pour choisir un fichier, ou glissez-le ici</div>
+        <div class="hint">Format attendu : .docx</div>
+      </div>
+    </div>
+    <input type="file" id="fileInput" accept=".docx">
+    <div class="status" id="loadStatus"></div>
+  </section>
+
+  <section class="step" data-num="II">
+    <h2>Terme recherché</h2>
+    <p class="help">Saisissez le mot ou la séquence de caractères arabes (ex. شفيتني, لله).</p>
+    <div class="row">
+      <input type="text" id="searchInput" placeholder="اكتب هنا…" disabled>
+      <button id="searchBtn" disabled>Rechercher</button>
+    </div>
+
+    <div class="modes">
+      <label class="mode-option">
+        <input type="checkbox" id="modeContains" checked>
+        Le bayt contient ce terme (une fois ou plus)
+      </label>
+      <label class="mode-option">
+        <input type="checkbox" id="modeExact">
+        <span class="mode-extra">
+          Le mot est répété exactement
+          <input type="number" id="countInput" value="2" min="1" max="20" disabled>
+          fois dans le bayt
+        </span>
+      </label>
+      <label class="mode-option">
+        <input type="checkbox" id="modeEnd">
+        Le mot est le dernier mot de chaque hémistiche (sadr et ajz — qafiya)
+      </label>
+    </div>
+    <p class="help" style="margin-top:10px;">Vous pouvez cocher plusieurs cases : le bayt devra alors satisfaire toutes les conditions cochées à la fois.</p>
+
+    <label class="opt">
+      <input type="checkbox" id="onlyBaytToggle" checked>
+      Ne chercher que dans les bayts (paragraphes avec 1 ou 3 séparateurs «&nbsp;|&nbsp;»)
+    </label>
+    <label class="opt">
+      <input type="checkbox" id="dedupToggle" checked>
+      Exclure les doublons (si un même bayt revient plusieurs fois dans le corpus, n'en garder qu'un seul)
+    </label>
+    <div class="status" id="searchStatus"></div>
+  </section>
+
+  <section class="step" data-num="III" id="resultsSection" style="display:none;">
+    <h2>Résultats</h2>
+    <p class="count" id="resultCount"></p>
+    <ol class="results" id="resultsList"></ol>
+    <div class="row" style="margin-top:20px;" id="downloadRow" style="display:none;">
+      <button class="ghost" id="downloadBtn" disabled>Télécharger le document Word</button>
+    </div>
+  </section>
+
+  <footer>Tout le traitement se fait localement dans votre navigateur — le corpus n'est jamais envoyé sur un serveur.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(function(){
+  let paragraphs = [];   // { text, pipeCount, isBayt }
+  let corpusName = '';
+  let lastMatches = [];  // array of { text, spans:[{start,end}] }
+  let lastTerm = '';
+  let lastModes = ['contains'];
+  let lastCount = 2;
+
+  const dropzone = document.getElementById('dropzone');
+  const dzText = document.getElementById('dzText');
+  const fileInput = document.getElementById('fileInput');
+  const loadStatus = document.getElementById('loadStatus');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const onlyBaytToggle = document.getElementById('onlyBaytToggle');
+  const dedupToggle = document.getElementById('dedupToggle');
+  const modeContains = document.getElementById('modeContains');
+  const modeExact = document.getElementById('modeExact');
+  const modeEnd = document.getElementById('modeEnd');
+  const countInput = document.getElementById('countInput');
+  const searchStatus = document.getElementById('searchStatus');
+  const resultsSection = document.getElementById('resultsSection');
+  const resultCount = document.getElementById('resultCount');
+  const resultsList = document.getElementById('resultsList');
+  const downloadRow = document.getElementById('downloadRow');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  ['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+    e.preventDefault(); dropzone.classList.remove('drag');
+  }));
+  dropzone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) handleFile(f);
+  });
+
+  function handleFile(file){
+    if (!file.name.toLowerCase().endsWith('.docx')){
+      showLoadError('Ce fichier ne semble pas être un .docx.');
+      return;
+    }
+    corpusName = file.name;
+    dzText.innerHTML = '<div class="fname">' + escapeHtml(file.name) + '</div><div class="hint">Lecture en cours…</div>';
+    loadStatus.textContent = '';
+    loadStatus.className = 'status';
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      mammoth.convertToHtml({ arrayBuffer: e.target.result })
+        .then(function(result){
+          extractParagraphs(result.value);
+          const baytCount = paragraphs.filter(p => p.isBayt).length;
+          dzText.innerHTML = '<div class="fname">' + escapeHtml(file.name) + '</div><div class="hint">' +
+            paragraphs.length + ' paragraphes chargés, dont ' + baytCount + ' bayts reconnus — prêt pour la recherche</div>';
+          searchInput.disabled = false;
+          searchBtn.disabled = false;
+          searchInput.focus();
+        })
+        .catch(function(err){
+          showLoadError("Impossible de lire ce document : " + err.message);
+        });
+    };
+    reader.onerror = function(){ showLoadError('Erreur de lecture du fichier.'); };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function showLoadError(msg){
+    loadStatus.textContent = msg;
+    loadStatus.className = 'status error';
+  }
+
+  const INVISIBLE_MARKS_RE = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+  function extractParagraphs(html){
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const nodes = doc.body.querySelectorAll('p, li, h1, h2, h3, h4');
+    paragraphs = [];
+    nodes.forEach(function(node){
+      let text = node.textContent.replace(INVISIBLE_MARKS_RE, '').replace(/\s+/g, ' ').trim();
+      if (!text) return;
+      const pipeCount = (text.match(/\|/g) || []).length;
+      paragraphs.push({ text: text, pipeCount: pipeCount, isBayt: (pipeCount === 1 || pipeCount === 3) });
+    });
+  }
+
+  // ---- Arabic-aware tokenizing & normalization (for the "exact repetition" mode) ----
+
+  const EDGE_PUNCT = '\\s\\u060C\\u061B\\u061F!.,:;"\'“”‘’()\\[\\]{}«»—-';
+  const EDGE_RE_START = new RegExp('^[' + EDGE_PUNCT + ']+');
+  const EDGE_RE_END = new RegExp('[' + EDGE_PUNCT + ']+$');
+  const DIACRITICS_RE = /[\u064B-\u0652\u0670\u0640]/g;
+  const ALEF_VARIANTS_RE = /[\u0622\u0623\u0625\u0671]/g;
+
+  // Length-preserving: every replaced character maps to exactly one character,
+  // so indices found against the normalized string stay valid on the original.
+  function normalizeAlefText(s){
+    return s.replace(ALEF_VARIANTS_RE, '\u0627');
+  }
+
+  function normalizeWord(s){
+    return s.replace(DIACRITICS_RE, '')
+      .replace(ALEF_VARIANTS_RE, '\u0627')
+      .replace(EDGE_RE_START, '')
+      .replace(EDGE_RE_END, '')
+      .trim();
+  }
+
+  function tokenize(text){
+    const tokens = [];
+    const re = /[^\s|]+/g;
+    let m;
+    while ((m = re.exec(text))){
+      tokens.push({ str: m[0], start: m.index, end: m.index + m[0].length });
+    }
+    return tokens;
+  }
+
+  // Splits a bayt's text into its hemistich segments on '|', keeping each
+  // segment's [start,end) offsets in the ORIGINAL string (so spans found
+  // inside a segment can be reported in the original text's coordinates).
+  function splitSegments(text){
+    const bounds = [];
+    let start = 0;
+    for (let i = 0; i < text.length; i++){
+      if (text[i] === '|'){
+        bounds.push([start, i]);
+        start = i + 1;
+      }
+    }
+    bounds.push([start, text.length]);
+    return bounds;
+  }
+
+  // Returns the [start,end) of the "core" of a token (stripped of edge punctuation),
+  // in the original string's coordinates.
+  function coreSpan(token){
+    const prefixLen = (token.str.match(EDGE_RE_START) || [''])[0].length;
+    const suffixLen = (token.str.match(EDGE_RE_END) || [''])[0].length;
+    return { start: token.start + prefixLen, end: token.end - suffixLen };
+  }
+
+  // Computes match spans for a bayt's text under the given mode.
+  // mode 'contains': every (possibly overlapping-free) substring occurrence of term.
+  // mode 'exact': every token whose normalized form equals normalized term; matches only if count === requiredCount.
+  // Computes match spans for a single mode. Returns null if this mode does not match.
+  function computeModeSpans(text, term, mode, requiredCount){
+    if (mode === 'exact'){
+      const normTerm = normalizeWord(term);
+      if (!normTerm) return null;
+      const tokens = tokenize(text);
+      const spans = [];
+      tokens.forEach(function(t){
+        if (normalizeWord(t.str) === normTerm) spans.push(coreSpan(t));
+      });
+      if (spans.length !== requiredCount) return null;
+      return spans;
+    }
+    if (mode === 'end'){
+      const normTerm = normalizeWord(term);
+      if (!normTerm) return null;
+      const segments = splitSegments(text);
+      if (segments.length < 2) return null; // needs at least sadr + ajz
+      const spans = [];
+      for (const [segStart, segEnd] of segments){
+        const segText = text.slice(segStart, segEnd);
+        const tokens = tokenize(segText);
+        if (tokens.length === 0) return null; // an empty hemistich can't end with the word
+        const lastToken = tokens[tokens.length - 1];
+        if (normalizeWord(lastToken.str) !== normTerm) return null; // every hemistich must qualify
+        const cs = coreSpan(lastToken);
+        spans.push({ start: segStart + cs.start, end: segStart + cs.end });
+      }
+      return spans;
+    }
+    // contains mode (alef variants unified; indices stay valid since the mapping is length-preserving)
+    const normText = normalizeAlefText(text);
+    const normTerm = normalizeAlefText(term);
+    if (!normTerm) return null;
+    const spans = [];
+    let idx = 0;
+    while (true){
+      const found = normText.indexOf(normTerm, idx);
+      if (found === -1) break;
+      spans.push({ start: found, end: found + normTerm.length });
+      idx = found + normTerm.length;
+    }
+    return spans.length ? spans : null;
+  }
+
+  function mergeSpans(spans){
+    if (!spans.length) return spans;
+    const sorted = spans.slice().sort(function(a, b){ return a.start - b.start; });
+    const merged = [Object.assign({}, sorted[0])];
+    for (let i = 1; i < sorted.length; i++){
+      const last = merged[merged.length - 1];
+      const cur = sorted[i];
+      if (cur.start <= last.end) last.end = Math.max(last.end, cur.end);
+      else merged.push(Object.assign({}, cur));
+    }
+    return merged;
+  }
+
+  // A bayt matches only if EVERY selected mode matches it; the spans shown/highlighted
+  // are the union of what each selected mode found.
+  function computeMatch(text, term, modes, requiredCount){
+    if (modes.length === 0) return null;
+    let allSpans = [];
+    for (const mode of modes){
+      const spans = computeModeSpans(text, term, mode, requiredCount);
+      if (!spans) return null;
+      allSpans = allSpans.concat(spans);
+    }
+    return mergeSpans(allSpans);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Builds highlighted HTML for preview, given text and non-overlapping spans (sorted).
+  function highlightSpansHtml(text, spans){
+    let html = '';
+    let cursor = 0;
+    spans.forEach(function(sp){
+      html += escapeHtml(text.slice(cursor, sp.start));
+      html += '<mark>' + escapeHtml(text.slice(sp.start, sp.end)) + '</mark>';
+      cursor = sp.end;
+    });
+    html += escapeHtml(text.slice(cursor));
+    return html;
+  }
+
+  modeExact.addEventListener('change', function(){
+    countInput.disabled = !modeExact.checked;
+  });
+
+  searchBtn.addEventListener('click', runSearch);
+  searchInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') runSearch(); });
+
+  function selectedModes(){
+    const modes = [];
+    if (modeContains.checked) modes.push('contains');
+    if (modeExact.checked) modes.push('exact');
+    if (modeEnd.checked) modes.push('end');
+    return modes;
+  }
+
+  function modeDescription(mode, term, requiredCount){
+    if (mode === 'exact') return '« ' + term + ' » répété exactement ' + requiredCount + ' fois';
+    if (mode === 'end') return '« ' + term + ' » comme dernier mot de chaque hémistiche';
+    return '« ' + term + ' » présent dans le bayt';
+  }
+
+  function normalizeBaytKey(text){
+    return normalizeAlefText(text.replace(DIACRITICS_RE, '')).replace(/\s+/g, ' ').trim();
+  }
+
+  function dedupeMatches(matches){
+    const seen = new Set();
+    const out = [];
+    matches.forEach(function(m){
+      const key = normalizeBaytKey(m.text);
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(m);
+    });
+    return out;
+  }
+
+  function runSearch(){
+    const term = searchInput.value.trim();
+    const modes = selectedModes();
+    const requiredCount = Math.max(1, parseInt(countInput.value, 10) || 2);
+
+    searchStatus.className = 'status';
+    if (!term){
+      searchStatus.textContent = 'Saisissez un terme à rechercher.';
+      searchStatus.className = 'status error';
+      return;
+    }
+    if (modes.length === 0){
+      searchStatus.textContent = 'Cochez au moins une condition de recherche.';
+      searchStatus.className = 'status error';
+      return;
+    }
+
+    const onlyBayt = onlyBaytToggle.checked;
+    const pool = onlyBayt ? paragraphs.filter(p => p.isBayt) : paragraphs;
+
+    let matches = [];
+    pool.forEach(function(p){
+      const spans = computeMatch(p.text, term, modes, requiredCount);
+      if (spans) matches.push({ text: p.text, spans: spans });
+    });
+    if (dedupToggle.checked) matches = dedupeMatches(matches);
+
+    lastMatches = matches;
+    lastTerm = term;
+    lastModes = modes;
+    lastCount = requiredCount;
+
+    resultsSection.style.display = '';
+    resultsList.innerHTML = '';
+
+    const modeLabel = modes.map(function(m){ return modeDescription(m, escapeHtml(term), requiredCount); }).join(' et ');
+
+    if (matches.length === 0){
+      resultCount.innerHTML = 'Aucun résultat pour ' + modeLabel + '.';
+      downloadRow.style.display = 'none';
+      downloadBtn.disabled = true;
+      return;
+    }
+
+    resultCount.innerHTML = '<strong>' + matches.length + '</strong> bayt' + (matches.length > 1 ? 's trouvés' : ' trouvé') + ' pour ' + modeLabel;
+    matches.forEach(function(m, i){
+      const li = document.createElement('li');
+      const idx = document.createElement('span');
+      idx.className = 'idx';
+      idx.textContent = (i + 1) + '.';
+      const bayt = document.createElement('span');
+      bayt.className = 'bayt';
+      bayt.innerHTML = highlightSpansHtml(m.text, m.spans);
+      li.appendChild(idx);
+      li.appendChild(bayt);
+      resultsList.appendChild(li);
+    });
+
+    downloadRow.style.display = '';
+    downloadBtn.disabled = false;
+  }
+
+  downloadBtn.addEventListener('click', function(){
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Génération…';
+    buildDocx(lastMatches, lastTerm, lastModes, lastCount, corpusName).then(function(blob){
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTerm = lastTerm.replace(/[^\p{L}\p{N}]+/gu, '_').slice(0, 40) || 'recherche';
+      a.download = 'resultats_' + safeTerm + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = 'Télécharger le document Word';
+    }).catch(function(err){
+      searchStatus.textContent = 'Erreur lors de la génération du document : ' + err.message;
+      searchStatus.className = 'status error';
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = 'Télécharger le document Word';
+    });
+  });
+
+  // ---- Minimal .docx builder (OOXML written by hand, zipped with JSZip) ----
+
+  function xmlEscape(s){
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+
+  function runXml(text, opts){
+    opts = opts || {};
+    const props = [];
+    props.push('<w:rFonts w:ascii="Amiri" w:hAnsi="Amiri" w:cs="Amiri"/>');
+    props.push('<w:rtl/>');
+    if (opts.bold) props.push('<w:b/><w:bCs/>');
+    if (opts.color) props.push('<w:color w:val="' + opts.color + '"/>');
+    if (opts.size) props.push('<w:sz w:val="' + opts.size + '"/><w:szCs w:val="' + opts.size + '"/>');
+    return '<w:r><w:rPr>' + props.join('') + '</w:rPr><w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r>';
+  }
+
+  function baytParagraphXml(text, spans){
+    let runs = '';
+    let cursor = 0;
+    spans.forEach(function(sp){
+      if (sp.start > cursor) runs += runXml(text.slice(cursor, sp.start), { size: 30 });
+      runs += runXml(text.slice(sp.start, sp.end), { bold: true, color: '6D2B2B', size: 30 });
+      cursor = sp.end;
+    });
+    if (cursor < text.length) runs += runXml(text.slice(cursor), { size: 30 });
+    return '<w:p><w:pPr><w:bidi/><w:jc w:val="right"/>' +
+      '<w:pBdr><w:bottom w:val="single" w:sz="4" w:space="6" w:color="D8C48E"/></w:pBdr>' +
+      '<w:spacing w:after="200" w:before="120"/></w:pPr>' + runs + '</w:p>';
+  }
+
+  function titleParagraphXml(text){
+    return '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="60"/></w:pPr>' +
+      '<w:r><w:rPr><w:rFonts w:ascii="Lora" w:hAnsi="Lora"/><w:b/><w:sz w:val="34"/><w:szCs w:val="34"/><w:color w:val="6D2B2B"/></w:rPr>' +
+      '<w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r></w:p>';
+  }
+
+  function metaParagraphXml(text){
+    return '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr>' +
+      '<w:r><w:rPr><w:rFonts w:ascii="Lora" w:hAnsi="Lora"/><w:i/><w:sz w:val="20"/><w:szCs w:val="20"/><w:color w:val="3C524D"/></w:rPr>' +
+      '<w:t xml:space="preserve">' + xmlEscape(text) + '</w:t></w:r></w:p>';
+  }
+
+  async function buildDocx(matches, term, modes, requiredCount, sourceName){
+    const today = new Date().toLocaleDateString('fr-FR');
+    const modeText = modes.map(function(m){ return modeDescription(m, term, requiredCount); }).join(' et ');
+    let body = '';
+    body += titleParagraphXml('Résultats de recherche — ' + term);
+    body += metaParagraphXml(matches.length + ' bayt' + (matches.length > 1 ? 's trouvés' : ' trouvé') +
+      ' pour ' + modeText + (sourceName ? ' dans ' + sourceName : '') + ' — ' + today);
+    matches.forEach(function(m){
+      body += baytParagraphXml(m.text, m.spans);
+    });
+    body += '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+      '<w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1417" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>';
+
+    const documentXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:body>' + body + '</w:body></w:document>';
+
+    const stylesXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:docDefaults><w:rPrDefault><w:rPr>' +
+      '<w:rFonts w:ascii="Lora" w:hAnsi="Lora" w:cs="Amiri"/><w:sz w:val="24"/><w:szCs w:val="28"/>' +
+      '</w:rPr></w:rPrDefault></w:docDefaults>' +
+      '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
+      '</w:styles>';
+
+    const contentTypesXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+      '</Types>';
+
+    const rootRelsXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>';
+
+    const docRelsXml =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      '</Relationships>';
+
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypesXml);
+    zip.folder('_rels').file('.rels', rootRelsXml);
+    const word = zip.folder('word');
+    word.file('document.xml', documentXml);
+    word.file('styles.xml', stylesXml);
+    word.folder('_rels').file('document.xml.rels', docRelsXml);
+
+    return zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+  }
+})();
+</script>
+</body>
+</html>
